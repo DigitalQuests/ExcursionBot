@@ -1,16 +1,14 @@
 package ru.markovav.excursionbot.models;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.UUID;
 
 @Entity
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "hints")
@@ -20,8 +18,8 @@ public class Hint {
     @Column(name = "id", nullable = false)
     private UUID id;
 
-    @Column(name = "order", nullable = false)
-    private Integer order;
+    @Column(name = "index", nullable = false)
+    private Integer index;
 
     @Column(name = "text", nullable = false)
     private String text;

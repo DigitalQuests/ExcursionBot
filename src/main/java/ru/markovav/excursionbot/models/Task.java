@@ -1,10 +1,7 @@
 package ru.markovav.excursionbot.models;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +10,7 @@ import java.util.UUID;
 @Entity
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "tasks")
@@ -22,8 +20,8 @@ public class Task {
     @Column(name = "id", nullable = false)
     private UUID id;
 
-    @Column(name = "order", nullable = false)
-    private Integer order;
+    @Column(name = "index", nullable = false)
+    private Integer index;
 
     @Column(name = "name", nullable = false)
     private String name;
@@ -32,7 +30,7 @@ public class Task {
     private String text;
 
     @OneToMany(mappedBy = "task", orphanRemoval = true)
-    @OrderBy("order")
+    @OrderBy("index")
     private List<Hint> hints = new ArrayList<>();
 
     @ManyToOne(optional = false)
