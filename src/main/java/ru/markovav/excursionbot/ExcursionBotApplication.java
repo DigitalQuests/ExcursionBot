@@ -4,12 +4,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import ru.markovav.excursionbot.seeders.ExcursionSeeder;
 
 import java.util.Objects;
 
 @SpringBootApplication
 @RequiredArgsConstructor
+@EnableJpaAuditing
 public class ExcursionBotApplication implements CommandLineRunner {
     private final ExcursionSeeder excursionSeeder;
 

@@ -22,6 +22,7 @@ public class BotService implements LongPollingSingleThreadUpdateConsumer {
     public static final String CALLBACK_SEPARATOR = ":";
     private final TelegramBotsLongPollingApplication botsApplication = new TelegramBotsLongPollingApplication();
     @Getter private final TelegramClient telegramClient;
+    @Getter private final String botUsername;
     private final Map<String, CommandHandler> commandHandlers = new HashMap<>();
     private final Map<String, ButtonHandler> buttonHandlers = new HashMap<>();
 
@@ -29,7 +30,7 @@ public class BotService implements LongPollingSingleThreadUpdateConsumer {
     public BotService(@Value("${bot.token}") String token) {
         telegramClient = new OkHttpTelegramClient(token);
         var me = telegramClient.execute(GetMe.builder().build());
-        System.out.println(me);
+        botUsername = me.getUserName();
         botsApplication.registerBot(token, this);
     }
 

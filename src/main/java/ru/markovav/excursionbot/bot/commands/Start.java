@@ -12,9 +12,12 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import ru.markovav.excursionbot.bot.BotService;
 import ru.markovav.excursionbot.models.Role;
 import ru.markovav.excursionbot.models.Route;
+import ru.markovav.excursionbot.repositories.ExcursionRepository;
 import ru.markovav.excursionbot.repositories.RouteRepository;
+import ru.markovav.excursionbot.services.ExcursionService;
 import ru.markovav.excursionbot.services.UserService;
 
+import java.util.UUID;
 import java.util.stream.StreamSupport;
 
 @Component
@@ -22,12 +25,16 @@ public class Start {
     private final BotService botService;
     private final UserService userService;
     private final RouteRepository routeRepository;
+    private final ExcursionRepository excursionRepository;
+    private final ExcursionService excursionService;
 
-    public Start(BotService botService, UserService userService, RouteRepository routeRepository) {
+    public Start(BotService botService, UserService userService, RouteRepository routeRepository, ExcursionRepository excursionRepository, ExcursionService excursionService) {
         this.botService = botService;
         botService.registerCommandHandler("start", this::handle);
         this.userService = userService;
         this.routeRepository = routeRepository;
+        this.excursionRepository = excursionRepository;
+        this.excursionService = excursionService;
     }
 
     @SneakyThrows
@@ -41,7 +48,24 @@ public class Start {
                         .text("Добро пожаловать в бота для экскурсий! Чтобы начать экскурсию, попросите QR код у вашего экскурсовода.")
                         .build());
             }
-            // TODO: get excursion by qr code
+            var excursionId = UUID.fromString(args[0]);
+            var excursion = excursionRepository.findById(excursionId);
+
+            if (excursion.isEmpty()) {
+                botService.getTelegramClient().execute(SendMessage.builder()
+                        .chatId(message.getChatId().toString())
+                        .text("Экскурсия не найдена")
+                        .build());
+                return;
+            }
+
+            excursionService.joinExcursion(excursion.get(), user);
+
+            botService.getTelegramClient().execute(SendMessage.builder()
+                    .chatId(message.getChatId().toString())
+                    .text("Вы присоединились к экскурсии!")
+                    .build());
+
             return;
         }
 
