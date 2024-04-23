@@ -15,20 +15,26 @@ import java.util.UUID;
 @AllArgsConstructor
 @Table(name = "excursion_task")
 public class ExcursionTask {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", nullable = false)
-    private UUID id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.UUID)
+  @Column(name = "id", nullable = false)
+  private UUID id;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "excursion_id", nullable = false)
-    private Excursion excursion;
+  @ManyToOne(optional = false)
+  @JoinColumn(name = "excursion_id", nullable = false)
+  private Excursion excursion;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "participant_id", nullable = false)
-    private User participant;
+  @ManyToOne(optional = false)
+  @JoinColumn(name = "participant_id", nullable = false)
+  private User participant;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "task_id", nullable = false)
-    private Task task;
+  @ManyToOne(optional = false)
+  @JoinColumn(name = "task_id", nullable = false)
+  private Task task;
+
+  @Column(name = "mistakes", nullable = false)
+  private Integer mistakes = 0;
+
+  @Column(name = "used_hints", nullable = false)
+  private Integer usedHints = 0;
 }

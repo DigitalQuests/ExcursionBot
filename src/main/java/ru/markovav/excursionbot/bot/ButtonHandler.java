@@ -4,5 +4,5 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 
 @FunctionalInterface
 public interface ButtonHandler {
-    void handle(CallbackQuery query, String data);
+  void handle(CallbackQuery query, String data);
 }

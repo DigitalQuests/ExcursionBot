@@ -17,33 +17,33 @@ import java.util.UUID;
 @AllArgsConstructor
 @Table(name = "excursions")
 public class Excursion {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", nullable = false)
-    private UUID id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.UUID)
+  @Column(name = "id", nullable = false)
+  private UUID id;
 
-    @CreatedDate
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+  @CreatedDate
+  @Column(name = "created_at", nullable = false)
+  private Instant createdAt;
 
-    @Column(name = "started_at")
-    private Instant startedAt;
+  @Column(name = "started_at")
+  private Instant startedAt;
 
-    @Column(name = "finished_at")
-    private Instant finishedAt;
+  @Column(name = "finished_at")
+  private Instant finishedAt;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "route_id", nullable = false)
-    private Route route;
+  @ManyToOne(optional = false)
+  @JoinColumn(name = "route_id", nullable = false)
+  private Route route;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "guide_id", nullable = false)
-    private User guide;
+  @ManyToOne(optional = false)
+  @JoinColumn(name = "guide_id", nullable = false)
+  private User guide;
 
-    @ManyToMany
-    @JoinTable(name = "excursions_participants",
-            joinColumns = @JoinColumn(name = "excursion_id"),
-            inverseJoinColumns = @JoinColumn(name = "participants_id"))
-    private Set<User> participants = new LinkedHashSet<>();
-
+  @ManyToMany
+  @JoinTable(
+      name = "excursions_participants",
+      joinColumns = @JoinColumn(name = "excursion_id"),
+      inverseJoinColumns = @JoinColumn(name = "participants_id"))
+  private Set<User> participants = new LinkedHashSet<>();
 }

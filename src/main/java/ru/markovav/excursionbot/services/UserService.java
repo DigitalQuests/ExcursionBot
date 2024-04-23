@@ -9,18 +9,28 @@ import ru.markovav.excursionbot.repositories.UserRepository;
 @Service
 @RequiredArgsConstructor
 public class UserService {
-    private final UserRepository userRepository;
+  private final UserRepository userRepository;
 
-    public User ensureCreated(org.telegram.telegrambots.meta.api.objects.User telegramUser) {
-        return userRepository.findByTelegramId(telegramUser.getId())
-                .orElseGet(
-                        () -> userRepository.save(User.builder()
-                                .telegramId(telegramUser.getId())
-                                .firstName(telegramUser.getFirstName())
-                                .lastName(telegramUser.getLastName())
-                                .username(telegramUser.getUserName())
-                                .role(Role.PARTICIPANT)
-                                .build())
-                );
-    }
+  public User ensureCreated(org.telegram.telegrambots.meta.api.objects.User telegramUser) {
+    return userRepository
+        .findByTelegramId(telegramUser.getId())
+        .orElseGet(
+            () ->
+                userRepository.save(
+                    User.builder()
+                        .telegramId(telegramUser.getId())
+                        .firstName(telegramUser.getFirstName())
+                        .lastName(telegramUser.getLastName())
+                        .username(telegramUser.getUserName())
+                        .role(Role.PARTICIPANT)
+                        .build()));
+  }
+
+  public boolean isGuide(User user) {
+    return hasPermission(user, Role.GUIDE);
+  }
+
+  public boolean hasPermission(User user, Role role) {
+    return user.getRole().getValue() >= role.getValue();
+  }
 }

@@ -13,22 +13,21 @@ import java.util.*;
 @AllArgsConstructor
 @Table(name = "routes")
 public class Route {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", nullable = false)
-    private UUID id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.UUID)
+  @Column(name = "id", nullable = false)
+  private UUID id;
 
-    @Column(name = "name", nullable = false)
-    private String name;
+  @Column(name = "name", nullable = false)
+  private String name;
 
-    @Column(name = "welcome_message", length = 1024, nullable = false)
-    private String welcome_message;
+  @Column(name = "welcome_message", length = 1024, nullable = false)
+  private String welcomeMessage;
 
-    @OneToMany(mappedBy = "route", orphanRemoval = true)
-    @OrderBy("index")
-    private List<Task> tasks = new ArrayList<>();
+  @OneToMany(mappedBy = "route", orphanRemoval = true)
+  @OrderBy("index")
+  private List<Task> tasks = new ArrayList<>();
 
-    @OneToMany(mappedBy = "route", orphanRemoval = true)
-    private Set<Excursion> excursions = new LinkedHashSet<>();
-
+  @OneToMany(mappedBy = "route", orphanRemoval = true)
+  private Set<Excursion> excursions = new LinkedHashSet<>();
 }
