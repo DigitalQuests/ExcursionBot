@@ -44,19 +44,24 @@ public class TaskService {
             .map(av -> answerVariantToKeyboard(et, av))
             .collect(Collectors.toList());
 
-    keyboardRows.add(helpButtonRow(et));
+    helpButtonRow(et, keyboardRows);
 
     return InlineKeyboardMarkup.builder().keyboard(keyboardRows).build();
   }
 
-  public InlineKeyboardRow helpButtonRow(ExcursionTask et) {
+  public void helpButtonRow(ExcursionTask et, List<InlineKeyboardRow> keyboardRows) {
+    if (et.getUsedHints() >= et.getTask().getHints().size()) {
+      return;
+    }
+
     var button =
         InlineKeyboardButton.builder()
             .text("Подсказка (-очко)")
             /* Help:[excursion_task_id] */
-            .callbackData(botService.createCallbackData("help", et.getId()))
+            .callbackData(botService.createCallbackData("hint", et.getId()))
             .build();
-    return new InlineKeyboardRow(List.of(button));
+
+    keyboardRows.add(new InlineKeyboardRow(List.of(button)));
   }
 
   public InlineKeyboardRow answerVariantToKeyboard(

@@ -213,6 +213,42 @@ public class ExcursionService {
     );
   }
 
+  @SneakyThrows
+  public void sendHint(CallbackQuery query, User user, UUID excursionTaskId) {
+    var excursionTaskOpt = excursionTaskRepository.findById(excursionTaskId);
+    if (excursionTaskOpt.isEmpty()) {
+      return;
+    }
+
+    var excursionTask = excursionTaskOpt.get();
+
+    if (!excursionTask.getParticipant().getId().equals(user.getId())) {
+      return;
+    }
+
+    var hints = excursionTask.getTask().getHints();
+    if (excursionTask.getUsedHints() >= hints.size()) {
+      return;
+    }
+
+    excursionTask.setUsedHints(excursionTask.getUsedHints() + 1);
+    excursionTaskRepository.save(excursionTask);
+
+    StringBuilder message = new StringBuilder(excursionTask.getTask().getText());
+    for (int i = 0; i < excursionTask.getUsedHints(); i++) {
+      message.append("\n\n" + "Подсказка ").append(i).append(":\n").append(hints.get(i).getText());
+    }
+
+    var editMessage = EditMessageText.builder()
+        .chatId(user.getTelegramId())
+        .messageId(query.getMessage().getMessageId())
+        .text(message.toString())
+        .replyMarkup(taskService.constructAnswersKeyboard(excursionTask))
+        .build();
+
+    botService.getTelegramClient().execute(editMessage);
+  }
+
   public User.ResultsStorage getResults(Excursion excursion, User user) {
     var tasks = excursionTaskRepository.findByExcursion_IdAndParticipant_IdOrderByTask_IndexDesc(
         excursion.getId(),
