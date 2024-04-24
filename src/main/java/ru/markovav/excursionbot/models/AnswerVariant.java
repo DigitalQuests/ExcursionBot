@@ -1,8 +1,9 @@
 package ru.markovav.excursionbot.models;
 
 import jakarta.persistence.*;
-import java.util.UUID;
 import lombok.*;
+
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -26,4 +27,5 @@ public class AnswerVariant {
   @ManyToOne(optional = false)
   @JoinColumn(name = "task_id", nullable = false)
   private Task task;
+
 }

@@ -2,9 +2,12 @@ package ru.markovav.excursionbot.bot.buttons;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
+import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageCaption;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
@@ -15,6 +18,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import ru.markovav.excursionbot.bot.BotService;
 import ru.markovav.excursionbot.bot.UuidHandlerAdapter;
 import ru.markovav.excursionbot.models.Excursion;
+import ru.markovav.excursionbot.models.User;
 import ru.markovav.excursionbot.services.ExcursionService;
 import ru.markovav.excursionbot.services.UserService;
 
@@ -108,14 +112,17 @@ public class ExcursionButtons {
   @SneakyThrows
   private void removeButtonsAndDisplayResults(
       MaybeInaccessibleMessage message, Excursion excursion) {
+    var results = excursionService.getAllResults(excursion);
+    var resultsMessage = "Результаты экскурсии (решено заданий, кол-во ошибок, кол-во подсказок):\n\n" +
+        results.stream().map(User.ResultsStorage::toString).collect(Collectors.joining("\n"));
+
     EditMessageCaption resultsMessageAction =
         EditMessageCaption.builder()
             .chatId(message.getChatId())
             .messageId(message.getMessageId())
-            .caption("Результаты экскурсии")
+            .caption(resultsMessage)
+            .parseMode(ParseMode.HTML)
             .build();
-
-    // TODO: Display results
 
     botService.getTelegramClient().execute(resultsMessageAction);
   }

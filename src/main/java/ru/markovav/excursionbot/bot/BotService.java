@@ -6,6 +6,9 @@ import jakarta.annotation.PreDestroy;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
@@ -15,7 +18,10 @@ import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.GetMe;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 @Service
@@ -28,6 +34,7 @@ public class BotService implements LongPollingSingleThreadUpdateConsumer {
   @Getter private final String botUsername;
   private final Map<String, CommandHandler> commandHandlers = new HashMap<>();
   private final Map<String, ButtonHandler> buttonHandlers = new HashMap<>();
+  private final ExecutorService executorService = Executors.newFixedThreadPool(1);
 
   @SneakyThrows
   public BotService(@Value("${bot.token}") String token) {
@@ -99,6 +106,29 @@ public class BotService implements LongPollingSingleThreadUpdateConsumer {
         return;
       }
       handler.handle(callbackQuery, parts[1]);
+    }
+  }
+
+  public void sendBatch(SendMessage... sendMessages) {
+    executorService.submit(() -> sendBatchJob(sendMessages));
+  }
+
+  @SneakyThrows
+  private void sendBatchJob(SendMessage... sendMessages) {
+    for (var msg : sendMessages) {
+      try {
+        telegramClient.execute(msg);
+      } catch (TelegramApiException e) {
+        log.error("Failed to send message", e);
+        if (e instanceof TelegramApiRequestException && ((TelegramApiRequestException) e).getErrorCode() == 429) {
+          log.warn("Rate limited, waiting for 3 second");
+          Thread.sleep(3000);
+          telegramClient.execute(msg);
+        } else {
+          log.error("Failed to send message", e);
+        }
+      }
+      Thread.sleep(250);
     }
   }
 

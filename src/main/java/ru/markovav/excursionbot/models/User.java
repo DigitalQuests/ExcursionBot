@@ -1,9 +1,15 @@
 package ru.markovav.excursionbot.models;
 
 import jakarta.persistence.*;
-import java.util.*;
 import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
+import org.jetbrains.annotations.NotNull;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -60,5 +66,39 @@ public class User {
     return this instanceof HibernateProxy hp
         ? hp.getHibernateLazyInitializer().getPersistentClass().hashCode()
         : getClass().hashCode();
+  }
+
+  @Override
+  public String toString() {
+    if (username != null) {
+      return "@" + username;
+    }
+    return "<a href=\"tg://user?id=" + telegramId + "\">" + firstName + (lastName == null ? "" : " " + lastName) + "</a>";
+  }
+
+  public record ResultsStorage(int solved, int mistakes, int hints, Instant lastSolvedAt, User user)
+      implements Comparable<ResultsStorage> {
+    @Override
+    public int compareTo(@NotNull ResultsStorage o) {
+      // Firstly compare by solved DESC, then by mistakes ASC, then by hints ASC, then by lastSolvedAt ASC
+      int solvedComparison = Integer.compare(o.solved, solved);
+      if (solvedComparison != 0) {
+        return solvedComparison;
+      }
+      int mistakesComparison = Integer.compare(mistakes, o.mistakes);
+      if (mistakesComparison != 0) {
+        return mistakesComparison;
+      }
+      int hintsComparison = Integer.compare(hints, o.hints);
+      if (hintsComparison != 0) {
+        return hintsComparison;
+      }
+      return lastSolvedAt.compareTo(o.lastSolvedAt);
+    }
+
+    @Override
+    public String toString() {
+      return user.toString() + " (" + solved + ", " + mistakes + ", " + hints + ")";
+    }
   }
 }

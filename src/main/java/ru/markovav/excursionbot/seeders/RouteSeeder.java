@@ -12,15 +12,17 @@ import ru.markovav.excursionbot.repositories.*;
 @Component
 @RequiredArgsConstructor
 @Log4j2
-public class ExcursionSeeder {
+public class RouteSeeder {
   private final RouteRepository routeRepository;
   private final HintRepository hintRepository;
   private final TaskRepository taskRepository;
   private final AnswerVariantRepository answerVariantRepository;
   private final ExcursionRepository excursionRepository;
+  private final ExcursionTaskRepository excursionTaskRepository;
 
   public void purge() {
     log.info("Purging database");
+    excursionTaskRepository.deleteAll();
     excursionRepository.deleteAll();
     answerVariantRepository.deleteAll();
     hintRepository.deleteAll();
@@ -68,7 +70,7 @@ public class ExcursionSeeder {
   }
 
   private void makeRoute() {
-    var route = Route.builder().name("Route 1").welcome_message("Welcome message").build();
+    var route = Route.builder().name("Route 1").welcomeMessage("Welcome message").build();
 
     routeRepository.save(route);
 

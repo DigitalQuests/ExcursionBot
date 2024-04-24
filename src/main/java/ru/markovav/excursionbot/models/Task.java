@@ -32,7 +32,8 @@ public class Task {
   private List<Hint> hints = new ArrayList<>();
 
   @OneToMany(mappedBy = "task", orphanRemoval = true)
-  private Set<AnswerVariant> answerVariants = new HashSet<>();
+  @OrderBy("text")
+  private List<AnswerVariant> answerVariants = new ArrayList<>();
 
   @ManyToOne(optional = false)
   @JoinColumn(name = "excursion_route_id", nullable = false)
