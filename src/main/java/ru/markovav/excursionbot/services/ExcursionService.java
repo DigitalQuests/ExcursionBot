@@ -106,6 +106,10 @@ public class ExcursionService {
     excursionRepository.save(excursion);
   }
 
+  public void cancelExcursion(Excursion excursion) {
+    excursionRepository.delete(excursion);
+  }
+
   @SneakyThrows
   public void nextTask(Excursion excursion, User user) {
     var nextIndex =

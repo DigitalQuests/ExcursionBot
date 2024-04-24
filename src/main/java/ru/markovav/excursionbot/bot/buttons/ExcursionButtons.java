@@ -38,6 +38,22 @@ public class ExcursionButtons {
     this.excursionService = excursionService;
     botService.registerButtonHandler("startExcursion", new UuidHandlerAdapter(this::handleStart));
     botService.registerButtonHandler("endExcursion", new UuidHandlerAdapter(this::handleEnd));
+    botService.registerButtonHandler("cancelExcursion", new UuidHandlerAdapter(this::handleCancel));
+  }
+
+  public void handleCancel(CallbackQuery query, UUID... uuids) {
+    var user = userService.ensureCreated(query.getFrom());
+    if (!userService.isGuide(user)) {
+      return;
+    }
+
+    excursionService.ifExists(
+        uuids[0],
+        excursion -> {
+          excursionService.cancelExcursion(excursion);
+          removeButtons(query);
+        },
+        () -> excursionNotFound(query));
   }
 
   public void handleEnd(CallbackQuery query, UUID... uuids) {
