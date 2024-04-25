@@ -3,7 +3,7 @@ WORKDIR /app
 COPY pom.xml /app/
 RUN mvn dependency:go-offline
 COPY src /app/src
-RUN mvn clean package
+RUN mvn package
 
 FROM eclipse-temurin:17-jdk-alpine
 COPY --from=build-stage /app/target/ExcursionBot-0.0.1-SNAPSHOT.jar app.jar
