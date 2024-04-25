@@ -24,6 +24,9 @@ public class Task {
   @Column(name = "name", nullable = false)
   private String name;
 
+  @Column(name = "location", nullable = false)
+  private String location;
+
   @Column(name = "text", nullable = false)
   private String text;
 

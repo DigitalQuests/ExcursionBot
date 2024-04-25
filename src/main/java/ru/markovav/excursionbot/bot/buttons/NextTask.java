@@ -36,7 +36,7 @@ public class NextTask {
     excursionService.ifExists(
         uuids[0],
         excursion -> {
-          excursionService.nextTask(excursion, user);
+          excursionService.sendNextLocation(excursion, user);
           removeButtons(query);
         },
         () -> excursionNotFound(query));

@@ -56,7 +56,7 @@ public class TaskService {
 
     var button =
         InlineKeyboardButton.builder()
-            .text("Подсказка (-очко)")
+            .text("Подсказка (минус балл)")
             /* Help:[excursion_task_id] */
             .callbackData(botService.createCallbackData("hint", et.getId()))
             .build();

@@ -3,8 +3,11 @@ package ru.markovav.excursionbot.bot.commands;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 import ru.markovav.excursionbot.bot.BotService;
@@ -40,6 +43,7 @@ public class Start {
   public void handle(Message message, String[] args) {
     var user = userService.ensureCreated(message.getFrom());
 
+
     if (user.getRole() == Role.PARTICIPANT) {
       if (args.length == 0) {
         botService
@@ -47,6 +51,7 @@ public class Start {
             .execute(
                 SendMessage.builder()
                     .chatId(message.getChatId().toString())
+                    .replyMarkup(ReplyKeyboardRemove.builder().build())
                     .text(
                         "Добро пожаловать в бота для экскурсий! Чтобы начать экскурсию, попросите QR код у вашего экскурсовода.")
                     .build());
@@ -73,6 +78,24 @@ public class Start {
                     .toList())
             .build();
 
+//    uncomment this block if you want to remove keyboard after sending message
+//    var msg = botService
+//        .getTelegramClient()
+//        .execute(
+//            SendMessage.builder()
+//                .chatId(message.getChatId().toString())
+//                .text("Removing keyboard")
+//                .replyMarkup(ReplyKeyboardRemove.builder().build())
+//                .build());
+//
+//    botService
+//        .getTelegramClient()
+//        .execute(
+//            DeleteMessage.builder()
+//                .chatId(message.getChatId().toString())
+//                .messageId(msg.getMessageId())
+//                .build());
+
     botService
         .getTelegramClient()
         .execute(
@@ -90,6 +113,7 @@ public class Start {
         .execute(
             SendMessage.builder()
                 .chatId(chatId)
+                .replyMarkup(ReplyKeyboardRemove.builder().build())
                 .text("Экскурсия не найдена")
                 .build()
         );

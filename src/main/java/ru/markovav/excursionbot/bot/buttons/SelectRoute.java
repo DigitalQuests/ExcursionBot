@@ -1,6 +1,7 @@
 package ru.markovav.excursionbot.bot.buttons;
 
 import java.util.UUID;
+
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
@@ -57,12 +58,15 @@ public class SelectRoute {
         .getTelegramClient()
         .execute(AnswerCallbackQuery.builder().callbackQueryId(query.getId()).build());
 
+    // https://t.me/bot?start=data
+    var botStartUrl = "https://t.me/" + botService.getBotUsername() + "?start=";
+
     botService
         .getTelegramClient()
         .execute(
             SendPhoto.builder()
                 .chatId(query.getFrom().getId())
-                .photo(new InputFile(excursionService.getExcursionQR(excursion), "qr.png"))
+                .photo(new InputFile(excursionService.generateQR(botStartUrl + excursion.getId().toString()), "qr.png"))
                 .caption("Покажите этот QR вашим слушателям, чтобы они присоединились к экскурсии.")
                 .replyMarkup(
                     InlineKeyboardMarkup.builder()

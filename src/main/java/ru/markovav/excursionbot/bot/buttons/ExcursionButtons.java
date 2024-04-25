@@ -32,7 +32,7 @@ public class ExcursionButtons {
       BotService botService,
       UserService userService,
       ExcursionService excursionService
-      ) {
+  ) {
     this.botService = botService;
     this.userService = userService;
     this.excursionService = excursionService;
@@ -107,11 +107,8 @@ public class ExcursionButtons {
             InlineKeyboardButton.builder()
                 .text("Завершить экскурсию")
                 .callbackData(botService.createCallbackData("endExcursion", excursion.getId()))
-                .build(),
-            InlineKeyboardButton.builder()
-                .text("Обновить результаты")
-                .callbackData(botService.createCallbackData("updateResults", excursion.getId()))
-                .build());
+                .build()
+        );
 
     var rows = buttons.stream().map(InlineKeyboardRow::new).toList();
     var markup = InlineKeyboardMarkup.builder().keyboard(rows).build();

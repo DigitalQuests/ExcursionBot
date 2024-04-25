@@ -44,9 +44,9 @@ public class RouteSeeder {
   }
 
   private void makeTasks(Route route) {
-    var task1 = Task.builder().name("Task 1").text("Description 1").index(1).route(route).build();
+    var task1 = Task.builder().name("Task 1").location("Location 1").text("Description 1").index(1).route(route).build();
 
-    var task2 = Task.builder().name("Task 2").text("Description 2").index(2).route(route).build();
+    var task2 = Task.builder().name("Task 2").location("Location 2").text("Description 2").index(2).route(route).build();
 
     taskRepository.save(task1);
     taskRepository.save(task2);

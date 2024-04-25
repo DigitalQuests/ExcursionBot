@@ -11,13 +11,15 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageRe
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
+import org.telegram.telegrambots.meta.api.objects.webapp.WebAppInfo;
 import ru.markovav.excursionbot.bot.BotService;
-import ru.markovav.excursionbot.models.Excursion;
-import ru.markovav.excursionbot.models.ExcursionTask;
-import ru.markovav.excursionbot.models.Route;
-import ru.markovav.excursionbot.models.User;
+import ru.markovav.excursionbot.models.*;
 import ru.markovav.excursionbot.repositories.ExcursionRepository;
 import ru.markovav.excursionbot.repositories.ExcursionTaskRepository;
 import ru.markovav.excursionbot.repositories.TaskRepository;
@@ -29,15 +31,19 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 @Service
 @Transactional
 public class ExcursionService {
+  public static final ReplyKeyboardRemove nullKeyboard = ReplyKeyboardRemove.builder().build();
   private final ExcursionRepository excursionRepository;
   private final BotService botService;
   private final ExcursionTaskRepository excursionTaskRepository;
   private final TaskRepository taskRepository;
   private final TaskService taskService;
+  private final ReplyKeyboardMarkup scanQrKeyboard;
+  private final Function<UUID, InlineKeyboardMarkup> startExcursionKeyboardFunc;
 
   @SneakyThrows
   public ExcursionService(ExcursionRepository excursionRepository, BotService botService, ExcursionTaskRepository excursionTaskRepository, TaskRepository taskRepository, TaskService taskService) {
@@ -46,6 +52,24 @@ public class ExcursionService {
     this.excursionTaskRepository = excursionTaskRepository;
     this.taskRepository = taskRepository;
     this.taskService = taskService;
+    this.scanQrKeyboard = ReplyKeyboardMarkup.builder()
+        .keyboardRow(new KeyboardRow(
+            KeyboardButton.builder()
+                .text("Сканировать QR")
+                .webApp(WebAppInfo.builder()
+                    .url("https://qrscanner.markovav.ru?filter=EXCURSION_BOT%3D")
+                    .build())
+                .build()
+        )).build();
+    this.startExcursionKeyboardFunc = excursionId -> InlineKeyboardMarkup.builder()
+        .keyboardRow(
+            new InlineKeyboardRow(
+                InlineKeyboardButton.builder()
+                    .text("Начать!")
+                    .callbackData(botService.createCallbackData("nextTask", excursionId))
+                    .build()
+            )
+        ).build();
   }
 
   public Excursion startExcursion(Route route, User guide) {
@@ -62,11 +86,19 @@ public class ExcursionService {
     excursionRepository.save(excursion);
 
     var sendMessage = SendMessage.builder()
-        .chatId(user.getTelegramId())
-        .text("Вы присоединились к экскурсии! Ожидайте начала.")
-        .build();
+        .chatId(user.getTelegramId());
 
-    botService.getTelegramClient().execute(sendMessage);
+    if (excursion.getFinishedAt() != null) {
+      sendMessage.text("Экскурсия уже завершена.").replyMarkup(nullKeyboard);
+    } else if (excursion.getStartedAt() != null) {
+      sendMessage.text(excursion.getRoute().getWelcomeMessage())
+          .replyMarkup(startExcursionKeyboardFunc.apply(excursion.getId()));
+    } else {
+      sendMessage.text("Вы присоединились к экскурсии! Ожидайте начала.")
+          .replyMarkup(nullKeyboard);
+    }
+
+    botService.getTelegramClient().execute(sendMessage.build());
   }
 
   public void startExcursion(Excursion excursion) {
@@ -75,23 +107,13 @@ public class ExcursionService {
       return;
     }
 
-    var keyboard = InlineKeyboardMarkup.builder()
-        .keyboardRow(
-            new InlineKeyboardRow(
-                InlineKeyboardButton.builder()
-                    .text("Начать!")
-                    .callbackData(botService.createCallbackData("nextTask", excursion.getId()))
-                    .build()
-            )
-        ).build();
-
     // broadcast message to all participants
     var sendMessages = excursion.getParticipants().stream()
         .map(User::getTelegramId)
         .map(tgId -> SendMessage.builder()
             .chatId(tgId.toString())
             .text(excursion.getRoute().getWelcomeMessage())
-            .replyMarkup(keyboard)
+            .replyMarkup(startExcursionKeyboardFunc.apply(excursion.getId()))
             .build())
         .toArray(SendMessage[]::new);
 
@@ -110,18 +132,31 @@ public class ExcursionService {
     excursionRepository.delete(excursion);
   }
 
-  @SneakyThrows
-  public void nextTask(Excursion excursion, User user) {
-    var nextIndex =
-        excursionTaskRepository.findByExcursion_IdAndParticipant_IdOrderByTask_IndexDesc(
-                excursion.getId(),
-                user.getId()
-            ).stream()
-            .findFirst()
-            .map(et -> et.getTask().getIndex() + 1)
-            .orElse(1);
+  public void consumeQR(UUID taskId, User user) {
+    var excursionOpt = excursionRepository.findFirstByParticipants_IdAndFinishedAtNullAndStartedAtNotNullOrderByStartedAtDesc(user.getId());
+    if (excursionOpt.isEmpty()) {
+      return;
+    }
 
-    var nextTask = taskRepository.findByIndexAndRoute_Id(nextIndex, excursion.getRoute().getId());
+    var excursion = excursionOpt.get();
+
+    var nextTask = getNextTask(excursion, user);
+    if (nextTask.isEmpty()) {
+      return;
+    }
+
+    if (!nextTask.get().getId().equals(taskId)) {
+      return;
+    }
+
+    var excursionTask = taskService.assignTaskToUser(nextTask.get(), excursion, user);
+
+    taskService.sendTaskToUser(excursionTask, user);
+  }
+
+  @SneakyThrows
+  public void sendNextLocation(Excursion excursion, User user) {
+    var nextTask = getNextTask(excursion, user);
 
     if (nextTask.isEmpty()) {
       var results = getResults(excursion, user);
@@ -139,9 +174,26 @@ public class ExcursionService {
       return;
     }
 
-    var excursionTask = taskService.assignTaskToUser(nextTask.get(), excursion, user);
+    botService.getTelegramClient().execute(
+        SendMessage.builder()
+            .chatId(user.getTelegramId())
+            .text(nextTask.get().getLocation())
+            .replyMarkup(scanQrKeyboard)
+            .build()
+    );
+  }
 
-    taskService.sendTaskToUser(excursionTask, user);
+  private Optional<Task> getNextTask(Excursion excursion, User user) {
+    var nextIndex =
+        excursionTaskRepository.findByExcursion_IdAndParticipant_IdOrderByTask_IndexDesc(
+                excursion.getId(),
+                user.getId()
+            ).stream()
+            .findFirst()
+            .map(et -> et.getTask().getIndex() + 1)
+            .orElse(1);
+
+    return taskRepository.findByIndexAndRoute_Id(nextIndex, excursion.getRoute().getId());
   }
 
   @SneakyThrows
@@ -236,7 +288,7 @@ public class ExcursionService {
 
     StringBuilder message = new StringBuilder(excursionTask.getTask().getText());
     for (int i = 0; i < excursionTask.getUsedHints(); i++) {
-      message.append("\n\n" + "Подсказка ").append(i).append(":\n").append(hints.get(i).getText());
+      message.append("\n\n" + "Подсказка ").append(i + 1).append(":\n").append(hints.get(i).getText());
     }
 
     var editMessage = EditMessageText.builder()
@@ -272,12 +324,8 @@ public class ExcursionService {
   }
 
   @SneakyThrows
-  public InputStream getExcursionQR(Excursion excursion) {
-    // https://t.me/bot?start=data
-    var qrData =
-        "https://t.me/" + botService.getBotUsername() + "?start=" + excursion.getId().toString();
-    var outStream =
-        QRCode.from(qrData).withSize(500, 500).withErrorCorrection(ErrorCorrectionLevel.Q).stream();
+  public InputStream generateQR(String data) {
+    var outStream = QRCode.from(data).withSize(500, 500).withErrorCorrection(ErrorCorrectionLevel.Q).stream();
 
     return new ByteArrayInputStream(outStream.toByteArray());
   }
